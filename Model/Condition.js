@@ -2,36 +2,45 @@ import {Macro} from "./Macro.js"
 
 class Condition extends Macro{
     static TYPE = { //value format
-        COLOR_AT_COORD: 0, // {val:colorhex,coord:{x,y}}
+        COLOR_AT_COORD: 0, // {val:colorhex,coord:{x,y},tolerance:10}
         NUMBER: 1 // {val:fixedToCompare,counter:object.count()} object yg expose counter via function int/float whatever
     }
 
 
     static COMPARE = {
-        IS_GREATER_THAN_VALUE: Symbol("IS_GREATER_THAN_VALUE"),
-        IS_GREATER_THAN_EQUAL_VALUE: Symbol("IS_GREATER_THAN_EQUAL_VALUE"),
-        IS_LESS_THAN_VALUE: Symbol("IS_LESS_THAN_VALUE"),
-        IS_LESS_THAN_EQUAL_VALUE: Symbol("IS_LESS_THAN_EQUAL_VALUE"),
-        IS_VALUE: Symbol("IS_VALUE"),
-        IS_NOT_VALUE: Symbol("IS_NOT_VALUE")
+        IS_GREATER_THAN_VALUE: 0,
+        IS_GREATER_THAN_EQUAL_VALUE: 1,
+        IS_LESS_THAN_VALUE: 2,
+        IS_LESS_THAN_EQUAL_VALUE: 3,
+        IS_VALUE: 4,
+        IS_NOT_VALUE: 5
     } 
     static labels = {
-        [Condition.COMPARE.IS_GREATER_THAN_VALUE]: ">",
-        [Condition.COMPARE.IS_GREATER_THAN_EQUAL_VALUE]: ">=",
-        [Condition.COMPARE.IS_LESS_THAN_VALUE]: "<",
-        [Condition.COMPARE.IS_LESS_THAN_EQUAL_VALUE]: "<=",
-        [Condition.COMPARE.IS_VALUE]: "==",
-        [Condition.COMPARE.IS_NOT_VALUE]: "!="
+        '0': ">",
+        '1': ">=",
+        '2': "<",
+        '3': "<=",
+        '4': "==",
+        '5': "!="
     };
 
     constructor(type,comparison,value){
         super()
+        this.classCode = Macro.TYPE.CONDITION
         this.type = type
         this.comparison = comparison
         this.value = value
         this.validateType()
         this.childMacros = []
     }
+
+    // toJSON(){
+    //     return { 
+    //         type: this.type,
+    //         comparison: this.comparison,
+    //         value: this.value
+    //     }
+    // }
     child(){
         return this.childMacros
     }

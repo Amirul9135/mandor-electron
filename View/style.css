@@ -131,3 +131,11 @@ background-color: #f0f0f0;
   input:read-only{
     cursor: pointer;
   }
+  #selCondOperator{ 
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none; 
+    text-align-last: center;
+    font-weight: bold;
+  } 

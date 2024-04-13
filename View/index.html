@@ -23,9 +23,11 @@
                 <button id="btnStop" type="button" class="btn btn-outline-danger controlBtn"><i class="fa fa-stop"
                         aria-hidden="true"></i></button>
             </div>
-            <!-- <div style="float:right">
-                <button id="btnToggleMode" type="button" class="btn btn-outline-secondary"><i class="fa fa-pencil" aria-hidden="true"></i></button>
-            </div> -->
+            <div style="float:right">
+                <button id="btnClear" type="button" class="btn btn-outline-danger"><i class="fa fa-ban" aria-hidden="true"></i></button>
+                <button id="btnLoad" type="button" class="btn btn-outline-info"><i class="fa fa-folder-open" aria-hidden="true"></i></button>
+                <button id="btnSave" type="button" class="btn btn-outline-primary"><i class="fa fa-save" aria-hidden="true"></i></button>
+            </div>
         </div>
         <div id="banner" class="col-12 bg-dark bg-gradient px-2 py-1">
             <i class="fa fa-info-circle" style="color: white;" aria-hidden="true"></i>
@@ -44,7 +46,7 @@
     </div>
     <!-- Modal -->
     <div class="modal" id="modal_macro" tabindex="-1" role="dialog">
-        <div class="modal-dialog " style="margin-right: 1vw;" role="document">
+        <div class="modal-dialog modal-lg" style="margin-right: 1vw;" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">New Macro&nbsp;<span id="modal_macro_title"></span></h5>
@@ -69,7 +71,12 @@
                                 loop
                             </div>
                             <div id="conditiontype" style="display: none;">
-                                condition
+                                <div class="row">
+                                    <label>Condition Type</label>
+                                    <select id="selConditionType" class="form-select" size="3"
+                                        aria-label="size 3 select example">
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -121,9 +128,41 @@
                                     </div>
                                 </div>
                             </div>
+                        </div> 
+                        <div class="col-12" id="conditionAtt" style="display: none;">
+                            <div class="row">
+                                <div class="col-12"> 
+                                    <div class="form-floating mb-3" >
+                                        <input class="form-control" type="text" name="inCondTarget"
+                                            readonly
+                                            id="inCondTarget" min="0" step="1"
+                                            title="condition target to check against the value"
+                                            placeholder="Duration">
+                                        <label for="inCondTarget">IF <span id="spnInCondTarget"></span></label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+
+                                        <select id="selCondOperator" class="form-select"  aria-label="size 3 select example">
+                                        </select>
+                                        <label for="selCondOperator">Operator</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating mb-3" >
+                                        <input class="form-control" type="text" name="inCondVal"
+                                            id="inCondVal" min="0" step="1"
+                                            title="value which will be used to check the target with"
+                                            placeholder="Duration">
+                                        <label id="lblInCondVal" for="inCondVal">Value</label>
+                                    </div>
+                                </div> 
+                                <hr>
+                                <span id="spnCondMsg"  class="text-muted" ></span>
+                            </div>
                         </div>
                         <div class="col-12" id="loopAtt" style="display: none;">loop</div>
-                        <div class="col-12" id="conditionAtt" style="display: none;">condition</div>
                     </div>
                 </div>
                 <div class="modal-footer">

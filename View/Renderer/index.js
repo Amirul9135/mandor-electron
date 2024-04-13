@@ -1,24 +1,25 @@
 import {Macro} from "../../Model/Macro.js"
 import {Command} from "../../Model/Command.js"
 import {Condition} from "../../Model/Condition.js"
-import {Loop} from "../../Model/Loop.js"  
+import {Loop} from "../../Model/Loop.js"   
 
 
 //globals
 const AllMacros = []
-const currentMouse = {
-    coord: {
-        x:0,
-        y:0
-    },
-    color: 'ffff'
-}
-
+const currSaved = {
+    changes : false,
+    fname: null
+} 
 
 // control buttons
 const btnStart = document.querySelector('#btnStart')
 const btnStop = document.querySelector('#btnStop')
 const btnPause = document.querySelector('#btnPause')
+
+const btnClear = document.querySelector('#btnClear')
+const btnLoad = document.querySelector('#btnLoad')
+const btnSave = document.querySelector('#btnSave')
+
 
 // main layouts
 const dvContent = document.querySelector('#dvContent')
@@ -34,6 +35,8 @@ const modalBtnCancel = document.querySelector('#modalBtnCancel')
 // selects
 const selMacroType = document.querySelector('#selMacroType')
 const selCommandType = document.querySelector('#selCommandType')
+const selConditionType = document.querySelector('#selConditionType')
+const selCondOperator = document.querySelector('#selCondOperator')
 
 //type divs
 const dvCommandType = document.querySelector('#commandType')
@@ -51,6 +54,13 @@ const inCoord = document.querySelector('#inCoord')
 const inCoordLabel = document.querySelector('#inCoordLabel')
 const inCommandDura = document.querySelector('#inCommandDura')
 
+//CONDITION attributes
+
+const inCondTarget = document.querySelector('#inCondTarget')
+const inCondVal = document.querySelector('#inCondVal')
+const lblInCondVal = document.querySelector('#lblInCondVal')
+const spnInCondTarget = document.querySelector('#spnInCondTarget')
+const spnCondMsg = document.querySelector('#spnCondMsg')
 
 const dvLoopAtt = document.querySelector('#loopAtt')
 const dvConditionAtt = document.querySelector('#conditionAtt')
@@ -84,6 +94,19 @@ window.addEventListener('load',(e)=>{
         opt.innerHTML = k
         selCommandType.appendChild(opt)
     }) 
+    Object.keys(Condition.TYPE).forEach(k=>{
+        let opt = document.createElement("option");
+        opt.value = Condition.TYPE[k]
+        opt.innerHTML = k
+        selConditionType.appendChild(opt)
+    }) 
+    Object.keys(Condition.COMPARE).forEach(k=>{ 
+        let opt = document.createElement("option"); 
+        opt.value =  Condition.COMPARE[k]
+        opt.innerHTML = Condition.labels[Condition.COMPARE[k]]
+        opt.title = k
+        selCondOperator.appendChild(opt)
+    }) 
 })
 // window.addEventListener('keydown', function(event) {
 //     console.log('hhh')
@@ -115,7 +138,7 @@ inCoord.addEventListener('click',(e)=>{
 
     getMouseF1(setCoordValue).then((result)=>{
         console.log('done capt')
-        setCoordValue(result.coord,false)
+        setCoordValue(result,false)
     }).catch((reason)=>{
         console.log('catch')
         inCoord.value = tmp
@@ -143,7 +166,7 @@ function getMouseF1(displayfn = null){
             console.log(`Received  from main process`,data); 
             if(data['path'] == 'start'){
                 if(displayfn){
-                    displayfn(data.data.coord)
+                    displayfn(data.data)
                 } 
             }
             if(data['path'] == 'stop'){
@@ -161,7 +184,8 @@ function getMouseF1(displayfn = null){
     })
 }
 
-function setCoordValue(coord,capturing = true){
+function setCoordValue(data,capturing = true){
+    let coord = data.coord
     if(capturing){ 
         inCoordLabel.innerHTML = 'Press F1 to Capture'
     }
@@ -223,6 +247,124 @@ selMacroType.addEventListener('change',(e)=>{
     }
 })
 
+selConditionType.addEventListener('change',(e)=>{
+    console.log('ch',e.target.value)
+    enableAllOperator()
+    lblInCondVal.innerHTML = "Value"
+    inCondVal.removeEventListener('contextmenu',rmbCondVal )
+    inCondTarget.removeEventListener('contextmenu',rmbCondTarget )
+    spnCondMsg.innerHTML = ''
+    if(e.target.value == Condition.TYPE.COLOR_AT_COORD){
+        spnCondMsg.innerHTML = 'Right Click field for assisted input'
+        lblInCondVal.innerHTML = "Color"
+        spnInCondTarget.innerHTML = 'Color At Coordinate'
+        inCondVal.addEventListener('contextmenu', rmbCondVal)
+        inCondTarget.addEventListener('contextmenu',rmbCondTarget )
+        equalsConditionOnly()
+    }
+    else{
+
+    }
+})
+
+function condColorPicker(){
+    spnCondMsg.innerHTML = 'Press F1 to capture color under mouse'
+    
+    let tmpinCondTarget = inCondTarget.value
+    let tmpinCondVal = inCondVal.value
+
+    getMouseF1(condSetColorPickerValue).then((result)=>{
+        console.log('done capt')
+        condSetColorPickerValue(result,false)
+        spnCondMsg.innerHTML = ''
+    }).catch((reason)=>{
+        console.log('catch') 
+        inCondTarget.value = tmpinCondTarget
+        inCondVal.value = tmpinCondVal 
+        spnCondMsg.innerHTML = ''
+    })
+}
+
+function condSetColorPickerValue(data,capturing = true){
+    inCondTarget.value = '(' + data.coord.x + ',' + data.coord.y + ')'
+    inCondVal.value = '#' + data.color
+    if(!capturing){
+        inCondTarget.dataset.actual = JSON.stringify(data.coord) 
+        inCondVal.dataset.actual = '#' + data.color
+    }
+}
+function rmbCondTarget(){
+    if(selConditionType.value == Condition.TYPE.COLOR_AT_COORD){ 
+        console.log('rmb tgt')
+        condColorPicker()
+    }
+
+}
+function rmbCondVal(){
+    if(selConditionType.value == Condition.TYPE.COLOR_AT_COORD){ 
+        console.log('rmb val')
+        condColorPicker()
+    }
+}
+function enableAllOperator(){
+    selCondOperator.childNodes.forEach(e=>{
+        e.disabled = false
+        e.selected = false
+    })
+
+}
+function equalsConditionOnly(){ 
+    selCondOperator.childNodes.forEach(e=>{ 
+        e.selected = false
+        if(e.value != Condition.COMPARE.IS_VALUE.toString()  &&  e.value !=  Condition.COMPARE.IS_NOT_VALUE.toString()){
+            e.disabled = true;
+        }
+        else{
+            e.selected = true
+        }
+    })
+}
+
+
+//Control buttons
+
+btnClear.addEventListener('click', async (e)=>{ 
+    if(await confirmDialog('Clear Macro')){
+        console.log('confirmed',test)
+        AllMacros.length = 0
+        refreshMacroDisplay()
+        currSaved.changes = true
+    }
+})
+
+btnSave.addEventListener('click',async (e)=>{
+    let val = await confirmDialogWTextIn('Save Macro','File Name:',currSaved.fname)
+    if(val){
+        console.log(val)
+        try { 
+            if(val.value.length == 0){
+                throw new Error('Invalid filename')
+            } 
+            window.api.send('macro-file',{
+                path:'save',
+                data: JSON.stringify(AllMacros),
+                fname:val.value
+            })
+                  
+            let tmplistener = window.api.receive("macro-file", (data) => {
+                console.log('save feedback', data)
+                window.api.clearListener('macro-file') 
+                if(data['path'] == 'save'){
+                    if(data['data'] ){
+                        console.log('succ')
+                    }
+                } 
+            });
+        } catch (error) {
+            notify_error('Invalid Filename')
+        }
+    }
+})
 
 //=============== Content panel Listeners ================== 
 dvContent.addEventListener('click', (e)=>{
@@ -243,6 +385,9 @@ dvContent.addEventListener('click', (e)=>{
 //=============== Context Menu Listeners ================== 
 
 dvContent.addEventListener('contextmenu',(e)=>{
+    if(dvContent.children.length == 0){
+        return
+    }
     e.preventDefault();
     let target = e.target 
     if(e.target.tagName == "P"){
@@ -335,6 +480,7 @@ ctBtnRemove.addEventListener('click', (e)=>{
     let curr = getSelectedMacro() 
     let tmp = [...AllMacros];
     tmp = removeSpecificMacro(tmp,curr.node.id)
+    currSaved.changes = true
     AllMacros.length = 0
     AllMacros.push(...tmp)
     refreshMacroDisplay()
@@ -405,13 +551,24 @@ function createNewMAcro(){
                     }
                 }
                 if(category == Macro.TYPE.CONDITION){
-                    
+                    let condType = selConditionType.value
+                    if(condType == Condition.TYPE.COLOR_AT_COORD){
+                        let coord = JSON.parse(inCondTarget.dataset.actual)
+                        let data = { 
+                            coord: coord,
+                            val: inCondVal.value
+                        }   
+                        macro = new Condition(condType,parseInt(selCondOperator.value),data)
+                        console.log('created',macro)
+                    }
                 }
                 if(category == Macro.TYPE.LOOP){
                     
                 }
                 $(dvModalMacro).modal('hide'); 
                 modalBtnAdd.removeEventListener('click',generateMacro)
+                let test = macro.label()// failing case yg blom create proper object
+                currSaved.changes = true
                 resolve(macro)
             } catch (error) {
                 notify_error('Failed to create macro, check input')
@@ -575,6 +732,7 @@ function findMacro(macros,nodeId){
 } 
 function showMacroModal(additionalTitle = ''){
     $(dvModalMacro).modal('show')
+    enableAllOperator()
     modal_macro_title.innerHTML = additionalTitle
     $('#' + dvModalMacro.id + ' input:not(:radio)').each(function() {
         // Set value to empty string
@@ -585,6 +743,16 @@ function showMacroModal(additionalTitle = ''){
             delete dataset[key];
         });
     });
+}
+const symbolRegex = /Symbol\(([^)]+)\)/
+function parseSymbol(str){
+    let match = symbolRegex.exec(str);
+    
+    if (match) {
+      return match[1]; 
+    } else {
+        return ''
+    } 
 }
 
 
@@ -614,6 +782,49 @@ function notify_error(msg){
         icon: "error",
         title: msg
     });
+}
+function confirmDialog(title,message = ''){
+    return new Promise((resolve,reject)=>{
+        Swal.fire({
+            title:title,
+            html: '<hr>' + message,
+            showCancelButton:true,
+            confirmButtonText: 'Yes',
+            cancelButtonText:'No' 
+        }).then((res)=>{
+            if(res['isConfirmed']){
+                resolve(true)
+            }
+            else{
+                reject(false)
+            }
+        })
+    })
+}
+function confirmDialogWTextIn(title,message = '',val =''){
+    return new Promise((resolve,reject)=>{
+        Swal.fire({
+            title:title,
+            input: "text",
+            inputAttributes: {
+            
+              autocapitalize: "off", 
+            },
+            inputValue: val,
+            html: '<hr>' + message,
+            showCancelButton:true,
+            confirmButtonText: 'Yes',
+            cancelButtonText:'No' 
+        }).then((res)=>{
+            if(res['isConfirmed']){
+                console.log('resni',res)
+                resolve(res)
+            }
+            else{
+                reject(false)
+            }
+        })
+    })
 }
 // function traceCurrentSelectedMacro(){ 
 //     let targetI = getSelectedIndex()

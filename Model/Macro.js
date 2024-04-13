@@ -29,8 +29,10 @@ class Macro{
     } 
     child(){
         throw new Error('Abstract method label must be implemented in inheriting concrete class');
-
     }
+    // toJSON(){
+    //     throw new Error('Abstract method label must be implemented in inheriting concrete class');
+    // }
 }
 
 export {

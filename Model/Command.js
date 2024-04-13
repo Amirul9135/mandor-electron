@@ -14,11 +14,20 @@ class Command extends Macro {
     }
     constructor(key, type, duration = 0, coord = null) {
         super()
+        this.classCode = Macro.TYPE.COMMAND
         this.key = key
         this.duration = duration
         this.type = type
         this.coord = coord
     }
+    // toJSON(){
+    //     return {
+    //         key: this.key,
+    //         type: this.type,
+    //         duration: this.duration,
+    //         coord: this.coord
+    //     }
+    // }
 
     label() {
         let lb = ((this.duration > 0) ? "Hold " + this.key + ' for ' + this.duration + ' miliseconds' : ((this.type == Command.TYPE.KEYBOARD_PRESS) ? 'Press ' : 'Click ') + this.key)

@@ -3,6 +3,7 @@ import {Condition} from "./Condition.js"
 class Loop extends Macro{
     constructor(condition){
         super()
+        this.classCode = Macro.TYPE.LOOP
         this.condition = condition
         this.condition.value.counter = this
         this.counter = 0

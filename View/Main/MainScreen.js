@@ -3,6 +3,9 @@ const electronLocalshortcut = require('electron-localshortcut');
 const path = require('path')
 const robot = require('robotjs')
 const isDev = process.env.NODE_ENV !== 'production'
+const fs = require('fs');
+const { promisify } = require('util');
+const open = promisify(fs.open);
 
 class MainScreen {
     constructor(preload) {
@@ -49,6 +52,55 @@ class MainScreen {
         ipcMain.on('key-capture',(event,args)=>{
             this.captureKeyOnce(args)
         })
+        
+        ipcMain.on("macro-file", async (event, args) => {
+            console.log('macroFile',args)
+            if(args['path']=="save"){
+                let success = true
+                try { 
+                    args['fname'] = path.join(__dirname,'..','..','data',args['fname'] )
+                    await this.saveMacro(args)
+                } catch (error) {
+                    console.log(error)
+                    success = false
+                }
+                    
+                this.window.webContents.send("macro-file", {
+                    path: args['path'], data: success
+                }); 
+            }
+        });
+    }
+
+    saveMacro(args){
+        fs.access(args['fname'], fs.constants.F_OK, (err) => {
+            if (err) {
+                // File does not exist, create it
+                fs.writeFile(args['fname'], '', (err) => {
+                    if (err) throw err;
+                    console.log(`File '${args['fname']}' created.`);
+                    // Open the file for reading and writing
+                    return this._openAndWriteFile(args);
+                });
+            } else {
+                // File exists, open it
+                return this._openAndWriteFile(args);
+            }
+        });
+    }
+
+    async _openAndWriteFile(data){  
+        let fd = await open(data['fname'], 'r+');
+        console.log(`File '${data['fname']}' opened.`); 
+        fs.writeFile(data['fname'], data['data'], err => {
+            if (err) {
+              console.error(err);
+              throw new Error('failed to write')
+            } else {
+              // file written successfully
+            }
+          });
+        console.log(`Data written`); 
     }
 
     async captureKeyOnce(args) { 

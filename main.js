@@ -50,14 +50,4 @@ app.on('activate', () => {
         MainWindow.create()
     }
 })
-
-Listeners['main/mouseCapture'] = MainWindow.captureMouseOnKeyPress
-ipcMain.on("toMain", (event, args) => {
-    // console.log(windows[0])
-    console.log(args)
-    console.log('to main from renderer')
-    // windows[0].window.webContents.send("fromMain", { test: 't' });
-    if(args['path']){
-        Listeners[args['path']](args)
-    }
-});
+ 
