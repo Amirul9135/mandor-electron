@@ -1,0 +1,124 @@
+body{
+    overflow-x: hidden;
+}
+#btn-banner{
+    position: sticky; 
+    background-color: rgba(32, 32, 104,.2);
+    padding: 5px;
+    border-radius: 8px;
+}
+#banner{     
+    position: sticky;
+    white-space: nowrap;
+
+}
+.btn i{
+    pointer-events: none;
+}
+#dvContextMenu{
+    cursor: pointer;
+}
+.context-menu {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.context-menu ul {
+list-style-type: none;
+padding: 0;
+margin: 0;
+}
+
+.context-menu ul li {
+padding: 8px 12px;
+}
+
+.context-menu ul li:hover {
+background-color: #f0f0f0;
+}
+.context-menu .disabled{
+    text-decoration: line-through;
+    pointer-events: none;
+    background-color: gainsboro;
+    opacity: .7;
+}
+
+/* Define scrollbar styles */
+/* For Webkit browsers */
+::-webkit-scrollbar {
+    width: 5px; /* Width of the scrollbar */
+    height: 3px;
+}
+
+/* Track (the area on which the thumb moves) */
+::-webkit-scrollbar-track {
+    background: #888; /* Color of the track */
+}
+
+/* Handle (the draggable scrolling element) */
+::-webkit-scrollbar-thumb {
+    background: #f1f1f1; /* Color of the scrollbar thumb */
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #f1f1f1; /* Color of the scrollbar thumb on hover */
+}
+#dvContent{
+    height:75vh; 
+    max-height: 80vh;
+    overflow-x: hidden;
+    counter-set: macro-counter;
+    pointer-events: none;
+}
+#dvContent:empty{
+    pointer-events:all;
+}
+.macro{ 
+    box-sizing: border-box;
+    transition: all .3s;
+    pointer-events: all;
+    background-color:gainsboro;
+    color: black;
+    white-space: nowrap;
+    margin-top: 2px;
+    counter-increment: macro-counter;
+    position: relative; 
+    padding-top: 2px;
+    padding-bottom: 2px;
+    box-sizing: border-box;
+    width: 100%; 
+    border: none;
+}
+.macro p{
+    margin: 0;
+    padding: 0;
+    margin-left: 40px;
+    white-space: nowrap;
+    overflow-y: hidden;
+}
+.macro::before {
+    content: counter(macro-counter);
+    display: block;
+    position: absolute;
+    color: blue;
+    width: 35px; /* Adjust as needed */
+    text-align: right; 
+    padding-right: 3px;
+    border-right: solid 1px blue;
+    background-color: inherit;
+  }
+
+  .selected {
+    box-sizing: border-box; 
+    background-color: black !important;
+    color: white;  
+  }
+
+  input:read-only{
+    cursor: pointer;
+  }
