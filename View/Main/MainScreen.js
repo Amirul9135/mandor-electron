@@ -29,44 +29,97 @@ class MainScreen {
         }
 
         this.window.loadFile(path.join(__dirname, '..', 'index.html'))
+
+        
+        electronLocalshortcut.register(this.window, 'Escape', () => {  
+            this.stopMouseCapture()
+        })
+        electronLocalshortcut.register(this.window, '', () => {  
+            console.log('anykey')
+        })
+
+        ipcMain.on('mouse-capture',(event,args)=>{
+            if(args['path'] == 'start') {
+                this.startMouseCapture(args)
+            }
+            if(args['path'] == 'stop') {
+                this.stopMouseCapture(args)
+            } 
+        })
+        ipcMain.on('key-capture',(event,args)=>{
+            this.captureKeyOnce(args)
+        })
+    }
+
+    async captureKeyOnce(args) { 
+        let key = await this._captureKeyPress()
+        key = {pressed:key}
+        console.log('capture key once', key)
+        this.window.webContents.send("key-capture", {
+            path: args['path'], data: key
+        }); 
     }
 
     startMouseCapture(args){
+
+        console.log('start capture')
         if(!this.capturingMouse){
+
             this.capturingMouse = setInterval(() => {
-                this.window.webContents.send("fromMain", {
+                this.window.webContents.send("mouse-capture", {
                     path: args['path'], data: this._captureMouse()
                 }); 
-            }, 300);
+            }, 100);
+            
+            electronLocalshortcut.register(this.window, 'F1', () => { 
+                console.log('F1')
+                electronLocalshortcut.unregister(this.window, 'F1'); 
+                let data = this._captureMouse()
+                
+                if(this.capturingMouse){
+                    clearInterval(this.capturingMouse)
+                    this.capturingMouse = null
+                }
+
+                this.window.webContents.send("mouse-capture", {
+                    path: 'snap', data: data
+                }); 
+            })
         } 
     }
 
     stopMouseCapture(args){ 
+        console.log('stop capture')
         if(this.capturingMouse){
             clearInterval(this.capturingMouse)
-        }
-    }
-
-    captureMouseOnKeyPress(args) {
-        electronLocalshortcut.register(this.window, 'F1', () => { 
-            electronLocalshortcut.unregister(this.window, 'F1'); 
-            let data = this._captureMouse()
-            console.log('captured',data)
-            this.window.webContents.send("fromMain", {
-                path: args['path'], data: data
+            this.capturingMouse = null
+            this.window.webContents.send("mouse-capture", {
+                path: 'stop', data: null
             }); 
-        })
-    }
+        }
+    } 
 
     _captureMouse(){
         let coord = robot.getMousePos()
         let color = robot.getPixelColor(coord.x, coord.y)
+        console.log({
+            coord: coord,
+            color: color
+        })
         return{
             coord: coord,
             color: color
         }
     }
 
+    _captureKeyPress(){
+        
+        process.stdin.setRawMode(true)
+        return new Promise(resolve => process.stdin.once('data', () => {
+            process.stdin.setRawMode(false)
+            resolve()
+        }))
+    }
     actions(data) {
 
     }

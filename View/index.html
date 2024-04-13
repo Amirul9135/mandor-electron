@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="../node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="../node_modules/sweetalert2/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="./style.css">
     <title>Mandor</title>
 </head>
@@ -43,10 +44,10 @@
     </div>
     <!-- Modal -->
     <div class="modal" id="modal_macro" tabindex="-1" role="dialog">
-        <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-dialog " style="margin-right: 1vw;" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Macro</h5>
+                    <h5 class="modal-title">New Macro&nbsp;<span id="modal_macro_title"></span></h5>
                 </div>
                 <div class="modal-body">
                     <div class="row">
@@ -83,14 +84,14 @@
                                     
                                     <div class="form-check  form-check-inline">
                                         <input class="form-check-input" type="radio" name="radMouseClick"
-                                            id="radLeftClick" value="option1" checked>
+                                            id="radLeftClick" value="LMB" checked>
                                         <label class="form-check-label" for="radLeftClick">
                                             Left Click
                                         </label>
                                     </div>
                                     <div class="form-check  form-check-inline">
                                         <input class="form-check-input" type="radio" name="radMouseClick"
-                                            id="radRightClick" value="option2">
+                                            id="radRightClick" value="RMB">
                                         <label class="form-check-label" for="radRightClick">
                                             Right Click
                                         </label>
@@ -103,7 +104,7 @@
                                             id="inCommandDura" min="0" step="1"
                                             title="duration of command in mili seconds, 0 = taps"
                                             placeholder="Duration">
-                                        <label for="inCommandDura">Duration</label>
+                                        <label for="inCommandDura">Duration (ms)</label>
                                     </div>
 
                                 </div>
@@ -111,7 +112,7 @@
                                     <div class="form-floating mb-3"  style="display: none;"  >
                                         <input  readonly class="form-control" type="text" name="inCmdKey" id="inCmdKey"
                                             title="Key to press" placeholder="Key">
-                                        <label for="inCmdKey">Key</label>
+                                        <label id="inCmdKeyLabel" for="inCmdKey">Key</label>
                                     </div>
                                     <div class="form-floating mb-3" style="display: none;"  >
                                         <input  readonly class="form-control" type="text" name="inCoord" id="inCoord"
@@ -126,15 +127,17 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary">Save changes</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button id="modalBtnAdd" type="button" class="btn btn-primary">Add</button>
+                    <button id="modalBtnCancel"  type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
+    <!-- TOAST --> 
 </body>
 <script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
 <script type="text/javascript" src="../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../node_modules/sweetalert2/dist/sweetalert2.min.js"></script>
 <link rel="stylesheet" href="../node_modules/@fortawesome/fontawesome-free/js/all.min.js">
 <script type="module" src="./Renderer/index.js"></script>
 

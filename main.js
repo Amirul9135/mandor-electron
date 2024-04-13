@@ -34,8 +34,9 @@ app.whenReady().then(() => {
     MainWindow.create() 
     // menu
 
-    const mainenu = Menu.buildFromTemplate(menuTemplate)
+    const mainenu = Menu.buildFromTemplate(menuTemplate) 
     Menu.setApplicationMenu(mainenu)
+    
 })
 
 app.on('window-all-closed', () => {

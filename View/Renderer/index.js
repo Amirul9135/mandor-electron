@@ -1,7 +1,7 @@
 import {Macro} from "../../Model/Macro.js"
 import {Command} from "../../Model/Command.js"
 import {Condition} from "../../Model/Condition.js"
-import {Loop} from "../../Model/Loop.js" 
+import {Loop} from "../../Model/Loop.js"  
 
 
 //globals
@@ -26,6 +26,10 @@ const dvContextMenu = document.querySelector('#dvContextMenu')
 
 //=============Modal============
 const dvModalMacro = document.querySelector('#modal_macro')
+const modal_macro_title = document.querySelector('#modal_macro_title')
+
+const modalBtnAdd = document.querySelector('#modalBtnAdd')
+const modalBtnCancel = document.querySelector('#modalBtnCancel')
 
 // selects
 const selMacroType = document.querySelector('#selMacroType')
@@ -42,6 +46,7 @@ const dvRadMouseClick = document.querySelector('#radMouseClick')
 const radLeftClick = document.querySelector('#radLeftClick')
 const radRightClick = document.querySelector('#radRightClick')
 const inCmdKey = document.querySelector('#inCmdKey')
+const inCmdKeyLabel = document.querySelector('#inCmdKeyLabel')
 const inCoord = document.querySelector('#inCoord')
 const inCoordLabel = document.querySelector('#inCoordLabel')
 const inCommandDura = document.querySelector('#inCommandDura')
@@ -62,6 +67,11 @@ const ctBtnRemove = document.querySelector('#ctBtnRemove')
 //=============== Listeners ==================
 //
 window.addEventListener('load',(e)=>{
+    $(dvModalMacro).modal({ 
+        keyboard: false
+    })
+    $(dvModalMacro).on('hidden.bs.modal', function (e) { 
+    });
     Object.keys(Macro.TYPE).forEach(k=>{
         let opt = document.createElement("option");
         opt.value = Macro.TYPE[k]
@@ -75,15 +85,81 @@ window.addEventListener('load',(e)=>{
         selCommandType.appendChild(opt)
     }) 
 })
- 
-//=============== Macro Creation Listeners ================== 
+// window.addEventListener('keydown', function(event) {
+//     console.log('hhh')
+    
+//     // Check if the escape key was pressed
+//     if (event.key === "Escape" ) {
+//         console.log('ESC', dvModalMacro.classList.contains('show'))
+//       // Prevent the default behavior of the escape key (closing the modal)
+//         event.preventDefault();
+//       // You can add your custom logic here if needed
+//     }``
+//   });
+//=============== Macro Creation Listeners ==================  
+inCmdKey.addEventListener('click',async (e)=>{
+    inCmdKeyLabel.innerHTML = "Key - Press key to capture"
+
+    let key = await getKey()
+    console.log('got' , key )
+    if(key){
+        key = key.toLowerCase()
+        inCmdKey.value = key
+    }
+
+    inCmdKeyLabel.innerHTML = "Key"
+})
 inCoord.addEventListener('click',(e)=>{
     console.log('e')
-    let tmp = e.target.value
-    setCoordValue({x:1,y:2})
+    let tmp = e.target.value 
 
-    window.api.send('toMain','test')
+    getMouseF1(setCoordValue).then((result)=>{
+        console.log('done capt')
+        setCoordValue(result.coord,false)
+    }).catch((reason)=>{
+        console.log('catch')
+        inCoord.value = tmp
+        inCoordLabel.innerHTML = 'Coordinate'
+    })
+
 })
+function getKey(){
+    return new Promise((resolve) => {
+        document.addEventListener('keydown', onKeyHandler);
+        function onKeyHandler(e) { 
+            document.removeEventListener('keydown', onKeyHandler)
+            console.log('capture', e.key)
+            resolve(e.key); 
+        }
+      });
+}
+function getMouseF1(displayfn = null){
+    return new Promise((resolve,reject)=>{
+        window.api.send('mouse-capture',{
+            path:'start' 
+        })
+        
+        let tmplistener = window.api.receive("mouse-capture", (data) => {
+            console.log(`Received  from main process`,data); 
+            if(data['path'] == 'start'){
+                if(displayfn){
+                    displayfn(data.data.coord)
+                } 
+            }
+            if(data['path'] == 'stop'){
+                console.log('reject')
+                window.api.clearListener('mouse-capture')
+                reject()
+            }
+            if(data['path'] == 'snap'){
+                console.log('snap received')
+                window.api.clearListener('mouse-capture')
+                resolve(data.data) 
+            }
+        });
+        console.log('what',tmplistener)
+    })
+}
 
 function setCoordValue(coord,capturing = true){
     if(capturing){ 
@@ -91,7 +167,7 @@ function setCoordValue(coord,capturing = true){
     }
     else{
         inCoordLabel.innerHTML = 'Coordinate'
-        inCoord.dataset.actual = coord.toString()
+        inCoord.dataset.actual = JSON.stringify(coord) 
     }
     inCoord.value = '('+coord.x+','+coord.y+')'
     
@@ -149,34 +225,22 @@ selMacroType.addEventListener('change',(e)=>{
 
 
 //=============== Content panel Listeners ================== 
-dvContent.addEventListener('click',(e)=>{
+dvContent.addEventListener('click', (e)=>{
+    if(dvContent.children.length != 0){
+        return
+    }
     console.log('dv content')
     $(dvModalMacro).modal('show');
     // add first macro sni
-    let n = Command.KeyboardCommand('F') 
-    AllMacros.push(n)
-    refreshMacroDisplay()
+     createNewMAcro().then((n)=>{
+        AllMacros.push(n)
+        refreshMacroDisplay()
+     })
 })
 // add after
 
 
 //=============== Context Menu Listeners ================== 
-ctBtnAfer.addEventListener('click', (e)=>{
-    let curr = getSelectedMacro()
-    console.log('current',curr)
-    createNewMAcro()
-    let n = Command.KeyboardCommand('A') 
-    if(curr.parent){
-        let pmacro = findMacroByNodeId(AllMacros,curr.parent.id)
-        let curIdx = pmacro.child().indexOf(curr) +1
-        pmacro.child().splice(curIdx, 0, n);
-    }
-    else{
-        let curIdx = AllMacros.indexOf(curr) +1
-        AllMacros.splice(curIdx, 0, n);
-    }
-    refreshMacroDisplay()
-})
 
 dvContent.addEventListener('contextmenu',(e)=>{
     e.preventDefault();
@@ -200,19 +264,45 @@ dvContent.addEventListener('contextmenu',(e)=>{
 }) 
 
 document.addEventListener('click',(e)=>{ 
-    if(!dvContextMenu.contains(e.target)){
+    if(!dvContextMenu.contains(e.target) && !dvModalMacro.classList.contains('show')){
         dvContextMenu.style.display = 'none'; 
         clearSelection();
         console.log('out of context click')
     }
 }) 
 
-// add before
-
-ctBtnBefore.addEventListener('click', (e)=>{
+ctBtnAfer.addEventListener('click', async (e)=>{
     let curr = getSelectedMacro()
     console.log('current',curr)
-    let n = Command.KeyboardCommand('B') 
+    let n = await createNewMAcro()
+    if(!n){
+        console.log('canceled')
+        return
+    }
+    // let n = Command.KeyboardCommand('A') 
+    if(curr.parent){
+        let pmacro = findMacroByNodeId(AllMacros,curr.parent.id)
+        let curIdx = pmacro.child().indexOf(curr) +1
+        pmacro.child().splice(curIdx, 0, n);
+    }
+    else{
+        let curIdx = AllMacros.indexOf(curr) +1
+        AllMacros.splice(curIdx, 0, n);
+    }
+    refreshMacroDisplay()
+})
+
+
+// add before
+
+ctBtnBefore.addEventListener('click', async (e)=>{
+    let curr = getSelectedMacro()
+    console.log('current',curr)
+    let n = await createNewMAcro()
+    if(!n){
+        console.log('canceled')
+        return
+    }
     if(curr.parent){
         let pmacro = findMacroByNodeId(AllMacros,curr.parent.id)
         let curIdx = pmacro.child().indexOf(curr) 
@@ -226,10 +316,14 @@ ctBtnBefore.addEventListener('click', (e)=>{
 })
 
 
-ctBtnInside.addEventListener('click', (e)=>{
+ctBtnInside.addEventListener('click', async (e)=>{
     let curr = getSelectedMacro()
     console.log('current',curr)
-    let n = Command.KeyboardCommand('I') 
+    let n = await createNewMAcro()
+    if(!n){
+        console.log('canceled')
+        return
+    }
     if(!Macro.canBeParent(curr)){
         return
     }  
@@ -285,8 +379,49 @@ function clearSelection(){
 
 
 function createNewMAcro(){
-    
-    $(dvModalMacro).modal('show');
+    return new Promise((resolve,reject)=>{ 
+        showMacroModal()
+        modalBtnAdd.addEventListener('click',generateMacro)
+        function generateMacro(){
+            console.log('generating')
+            try {
+                let macro = null
+                let category = selMacroType.value
+                if(category == Macro.TYPE.COMMAND){
+                    let cmdType = selCommandType.value
+                    if(selCommandType.value == Command.TYPE.MOUSE_CLICK){
+                        let rad =  $('input[name="radMouseClick"]:checked').val(); 
+                        macro = new Command(rad,cmdType,inCommandDura.value,JSON.parse( inCoord.dataset.actual))
+                    }else{
+                        //keyboards
+                        if(selCommandType.value != Command.TYPE.DELAY && !inCmdKey.value){
+                            throw new Error('invalid')
+                        }
+                        if(selCommandType.value == Command.TYPE.DELAY && !(parseInt(inCommandDura.value))){
+                            throw new Error('invalid')
+
+                        }
+                        macro = new Command(inCmdKey.value,cmdType,inCommandDura.value)
+                    }
+                }
+                if(category == Macro.TYPE.CONDITION){
+                    
+                }
+                if(category == Macro.TYPE.LOOP){
+                    
+                }
+                $(dvModalMacro).modal('hide'); 
+                modalBtnAdd.removeEventListener('click',generateMacro)
+                resolve(macro)
+            } catch (error) {
+                notify_error('Failed to create macro, check input')
+                console.log(error)
+                // modalBtnAdd.removeEventListener('click',generateMacro)
+                // $(dvModalMacro).modal('hide'); 
+                // reject()
+            }
+        }
+    })
 }
 function dummy(e){ 
     let cd = new Condition(Condition.TYPE.COLOR_AT_COORD,Condition.COMPARE.IS_NOT_VALUE,{val:100,coord:{x:1,y:1}})
@@ -437,8 +572,50 @@ function findMacro(macros,nodeId){
         }
     } 
     return null
+} 
+function showMacroModal(additionalTitle = ''){
+    $(dvModalMacro).modal('show')
+    modal_macro_title.innerHTML = additionalTitle
+    $('#' + dvModalMacro.id + ' input:not(:radio)').each(function() {
+        // Set value to empty string
+        $(this).val('');
+        // Clear dataset
+        var dataset = $(this)[0].dataset;
+        Object.keys(dataset).forEach(function(key) {
+            delete dataset[key];
+        });
+    });
 }
-// function traceCurrentSelectedMacro(){
+
+
+const Toast = Swal.mixin({
+    toast: true,
+    position: "bottom-end",
+    showConfirmButton: false,
+    timer: 1500,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+    }
+    }); 
+function notify(msg){
+    // alert(msg) 
+    
+    Toast.fire({
+        icon: "info",
+        title: msg
+    });
+}
+function notify_error(msg){
+    // alert(msg) 
+    
+    Toast.fire({
+        icon: "error",
+        title: msg
+    });
+}
+// function traceCurrentSelectedMacro(){ 
 //     let targetI = getSelectedIndex()
 //     if(targetI < 0){
 //         console.log('no selected macro')

@@ -78,6 +78,15 @@ background-color: #f0f0f0;
 #dvContent:empty{
     pointer-events:all;
 }
+#dvContent:empty::after {
+    content: "Click to add"; 
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000; /* Adjust as needed */
+    font-size: 16px; /* Adjust as needed */
+}
 .macro{ 
     box-sizing: border-box;
     transition: all .3s;
