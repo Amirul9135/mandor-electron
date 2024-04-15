@@ -1,4 +1,4 @@
-import {Macro} from "./Macro.js" 
+import {Macro} from "./Macro.mjs" 
 
 class Condition extends Macro{
     static TYPE = { //value format

@@ -1,7 +1,8 @@
-import {Macro} from "../../Model/Macro.js"
-import {Command} from "../../Model/Command.js"
-import {Condition} from "../../Model/Condition.js"
-import {Loop} from "../../Model/Loop.js"   
+import {Macro} from "../../Model/Macro.mjs"
+import {Command} from "../../Model/Command.mjs"
+import {Condition} from "../../Model/Condition.mjs"
+import {Loop} from "../../Model/Loop.mjs"   
+import {MacroController} from "../../Controller/MacroController.js" 
 
 
 //globals
@@ -24,7 +25,8 @@ const btnSave = document.querySelector('#btnSave')
 // main layouts
 const dvContent = document.querySelector('#dvContent')
 const dvContextMenu = document.querySelector('#dvContextMenu') 
-
+const modalFolder = document.querySelector('#modalFolder')
+const dvFolderContent = document.querySelector('#dvFolderContent')
 //=============Modal============
 const dvModalMacro = document.querySelector('#modal_macro')
 const modal_macro_title = document.querySelector('#modal_macro_title')
@@ -162,7 +164,7 @@ function getMouseF1(displayfn = null){
             path:'start' 
         })
         
-        let tmplistener = window.api.receive("mouse-capture", (data) => {
+        window.api.receive("mouse-capture", (data) => {
             console.log(`Received  from main process`,data); 
             if(data['path'] == 'start'){
                 if(displayfn){
@@ -179,8 +181,7 @@ function getMouseF1(displayfn = null){
                 window.api.clearListener('mouse-capture')
                 resolve(data.data) 
             }
-        });
-        console.log('what',tmplistener)
+        }); 
     })
 }
 
@@ -329,13 +330,83 @@ function equalsConditionOnly(){
 //Control buttons
 
 btnClear.addEventListener('click', async (e)=>{ 
-    if(await confirmDialog('Clear Macro')){
-        console.log('confirmed',test)
+    if(await confirmDialog('Clear Macro')){ 
         AllMacros.length = 0
         refreshMacroDisplay()
         currSaved.changes = true
     }
 })
+btnLoad.addEventListener('click',async (e)=>{
+    loadFile().then((result)=>{
+        dvFolderContent.innerHTML = ''
+        $(modalFolder).modal('show')
+        console.log(result)
+        result.data.forEach(f=>{ 
+            let btn = document.createElement("button");
+            btn.classList.add('btn')
+            btn.classList.add('btn-outline-info')
+            btn.type = 'button'
+            btn.innerHTML = f
+            btn.addEventListener('click',()=>{
+                openFile(f)
+            })
+            dvFolderContent.appendChild(btn)
+        })
+    })
+})
+
+async function openFile(fname){
+    console.log(fname)
+    try {
+        
+        window.api.send('macro-file',{
+            path:'open', 
+            fname: fname
+        })
+        let data = await new Promise((resolve,reject)=>{
+            window.api.receive("macro-file", (data) => {
+                console.log('open feedback', data)
+                window.api.clearListener('macro-file') 
+                if(data['path'] == 'open'){
+                    resolve(data)
+                } 
+            });
+        })
+        if(!data){
+            throw new Error('s')
+        }
+        console.log('filecontent', data.data)
+        let macros = []
+        MacroController.JOBJtoMacros(JSON.parse(data.data),macros)
+        console.log('parsed',macros)
+        currSaved.fname = fname
+        currSaved.changes = false
+        AllMacros.length = 0
+        AllMacros.push(...macros)
+        refreshMacroDisplay()
+
+    } catch (error) {
+        console.log(error)
+        notify_error("Failed to load file")
+    }
+}
+
+
+function loadFile(){
+    return new Promise((resolve,reject)=>{
+        window.api.send('macro-file',{
+            path:'list', 
+        })
+                      
+        window.api.receive("macro-file", (data) => {
+            console.log('list feedback', data)
+            window.api.clearListener('macro-file') 
+            if(data['path'] == 'list'){
+                resolve(data)
+            } 
+        });
+    })
+}
 
 btnSave.addEventListener('click',async (e)=>{
     let val = await confirmDialogWTextIn('Save Macro','File Name:',currSaved.fname)
@@ -351,7 +422,7 @@ btnSave.addEventListener('click',async (e)=>{
                 fname:val.value
             })
                   
-            let tmplistener = window.api.receive("macro-file", (data) => {
+            window.api.receive("macro-file", (data) => {
                 console.log('save feedback', data)
                 window.api.clearListener('macro-file') 
                 if(data['path'] == 'save'){
@@ -489,10 +560,35 @@ ctBtnRemove.addEventListener('click', (e)=>{
 
 //=============== Main Controls Listeners ================== 
 btnStart.addEventListener('click',(e)=>{
-    dummy(e)
+    window.api.send('macro',{
+        path:'start',
+        data: JSON.stringify(AllMacros), 
+    })
+    
+                  
+    window.api.receive("macro", (data) => {
+        console.log('macro',data)
+        // if(data['path'] == 'executing'){ 
+        // } 
+        try {
+            document.querySelectorAll('.running').forEach(d=>{
+                d.classList.remove('running')
+            })
+            document.querySelector('#'+data['data']).classList.add('running') 
+        } catch (error) {
+            console.log(error)
+        }
+    });
+    console.log('addeds')
 })
 btnStop.addEventListener('click',(e)=>{
-    dummy(e)
+    window.api.send('macro',{
+        path:'stop', 
+    })
+    window.api.clearListener('macro') 
+    document.querySelectorAll('.running').forEach(d=>{
+        d.classList.remove('running')
+    })
 })
 btnPause.addEventListener('click',(e)=>{
     dummy(e)
@@ -618,13 +714,16 @@ function spawnNewMacroDiv(macro,parent = null, padding = 0){
     
     newDiv.dataset.model = macro.constructor.name
     macro.parent = parent
-    if(!macro.node){
+    console.log('mid create',macro)
+    if(!macro.nodeId){
+        let nid = "MC_"+ spawnCount 
         macro.node = newDiv
-        newDiv.id="MC_"+ spawnCount 
+        newDiv.id= nid
+        macro.nodeId = nid 
         spawnCount++
     }
     else{
-        newDiv.id=macro.node.id
+        newDiv.id= macro.nodeId
         macro.node = newDiv
     }
     

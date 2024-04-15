@@ -3,8 +3,7 @@ const electronLocalshortcut = require('electron-localshortcut');
 const path = require('path')
 const robot = require('robotjs');
 const { MainScreen } = require('./View/Main/MainScreen');
-const preload = path.join(__dirname, 'preload.js')
-
+const preload = path.join(__dirname, 'preload.js') 
 const isDev = process.env.NODE_ENV !== 'production'
 
 
@@ -36,6 +35,8 @@ app.whenReady().then(() => {
 
     const mainenu = Menu.buildFromTemplate(menuTemplate) 
     Menu.setApplicationMenu(mainenu)
+ 
+    
     
 })
 

@@ -22,6 +22,7 @@ class Macro{
         return res
     }
     constructor(){ 
+        this.nodeId = null
 
     }
     label(){
@@ -33,6 +34,8 @@ class Macro{
     // toJSON(){
     //     throw new Error('Abstract method label must be implemented in inheriting concrete class');
     // }
+    
+ 
 }
 
 export {

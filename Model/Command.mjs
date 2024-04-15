@@ -1,4 +1,4 @@
-import { Macro } from "./Macro.js"
+import { Macro } from "./Macro.mjs"
 
 class Command extends Macro {
     static TYPE = {
@@ -18,7 +18,7 @@ class Command extends Macro {
         this.key = key
         this.duration = duration
         this.type = type
-        this.coord = coord
+        this.coord = coord 
     }
     // toJSON(){
     //     return {

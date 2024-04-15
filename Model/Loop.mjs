@@ -1,5 +1,5 @@
-import {Macro} from "./Macro.js"
-import {Condition} from "./Condition.js"
+import {Macro} from "./Macro.mjs"
+import {Condition} from "./Condition.mjs"
 class Loop extends Macro{
     constructor(condition){
         super()

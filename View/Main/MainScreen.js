@@ -6,12 +6,14 @@ const isDev = process.env.NODE_ENV !== 'production'
 const fs = require('fs');
 const { promisify } = require('util');
 const open = promisify(fs.open);
+const {MacroExecutor} = require('../../Controller/MacroExecutor.js')
 
 class MainScreen {
     constructor(preload) {
         this.window = null
         this.preload = preload
         this.capturingMouse = null
+        this.executor = new MacroExecutor(this._executorChannel.bind(this))
     }
 
     create() {
@@ -69,9 +71,66 @@ class MainScreen {
                     path: args['path'], data: success
                 }); 
             }
+            if(args['path']=="list"){
+                let files = await this.listMacroFiles(args)
+                console.log('read',files)
+                if(!files){
+                    files = []
+                }
+                this.window.webContents.send("macro-file", {
+                    path:args['path'] , data: files
+                }); 
+            }
+            if(args['path']=="open"){
+                args['fname'] = path.join(__dirname,'..','..','data',args['fname'] )
+
+                let data = await this.readFile(args)
+                console.log('readded',data)
+                this.window.webContents.send("macro-file", {
+                    path:args['path'] , data: data
+                }); 
+            }
+
         });
+
+        ipcMain.on("macro", async(event,args)=>{ 
+            if(args['path']=="start"){
+                console.log('request to start data is',args['data'])
+                this.executor.setMacro(JSON.parse(args['data']))
+                this.executor.run()
+            }
+            if(args['path']=="stop"){
+                console.log('request to stop')
+                this.executor.stop()
+            }
+        })
     }
 
+    readFile(args){
+        return new Promise((resolve,reject)=>{
+            fs.readFile(args['fname'], 'utf8', (err, data) => {
+                if (err) {
+                    console.error(`Error reading file '${filename}':`, err);
+                    return reject()
+                }
+             
+                resolve(data); // Output the contents of the file as a string
+            });
+        })
+    }
+    listMacroFiles(args){
+        return new Promise((resolve,reject)=>{
+            fs.readdir(path.join(__dirname,'..','..','data'), (err, files) => {
+                if (err) {
+                    console.error(`Error reading directory  :`, err);
+                    reject();
+                }
+                console.log(`Files in directory  :`, files); 
+                resolve(files)
+            });
+
+        })
+    }
     saveMacro(args){
         fs.access(args['fname'], fs.constants.F_OK, (err) => {
             if (err) {
@@ -172,8 +231,19 @@ class MainScreen {
             resolve()
         }))
     }
-    actions(data) {
-
+    _executorChannel(args){
+        console.log('executor msg',args)
+        try {
+            args = JSON.parse(args)
+            console.log('object',args)
+            if(args['path'] == 'executing'){
+                this.window.webContents.send("macro", {
+                    path:args['path'] , data: args['data']
+                }); 
+            }
+        } catch (error) {
+            console.log(error)
+        }
     }
 }
 

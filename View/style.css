@@ -139,3 +139,16 @@ background-color: #f0f0f0;
     text-align-last: center;
     font-weight: bold;
   } 
+  #dvFolderContent{
+    max-height: 50vh;
+    overflow-x: hidden; 
+  }
+  #dvFolderContent button{
+    width: 100%;
+    display:block;
+    margin-bottom: 5px;
+  }
+
+  .running{
+    background-color: rgba(111, 222, 111, .5) !important;
+  }
