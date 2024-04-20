@@ -29,6 +29,7 @@ class Condition extends Macro{
         this.classCode = Macro.TYPE.CONDITION
         this.type = type
         this.comparison = comparison
+        this.async = false;
         this.value = value
         this.validateType()
         this.childMacros = []
@@ -45,14 +46,14 @@ class Condition extends Macro{
         return this.childMacros
     }
     label(){
-        let label = ''
+        let label = (this.async) ? 'When' : 'IF'
         console.log('labeling',this.value,this.comparison)
         if (this.type == Condition.TYPE.NUMBER){
              
-            label = 'IF ' + this.value.counter.count()
+            label += ' ' + this.value.counter.count()
         }
         if (this.type == Condition.TYPE.COLOR_AT_COORD){
-            label = 'IF color at (' + this.value.coord.x +','+this.value.coord.y + ')'
+            label += ' color at (' + this.value.coord.x +','+this.value.coord.y + ')'
         }
         label += ' ' + Condition.labels[this.comparison] + ' ' + this.value["val"]
         return label

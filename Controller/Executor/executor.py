@@ -2,10 +2,13 @@ import json
 import pyautogui
 import time
 import sys
+import threading
 from Model.Macro import Macro
 from Model.Command import Command
 from Model.Condition import Condition
 
+asyncConditions:list[Macro] = []
+globalDelay = 1
 
 def parseMacros(jsonObj):
     
@@ -25,24 +28,40 @@ def parseToMacroArray(arr,macroArray:list,parent:Macro=None):
             n = Command.fromJSON(macro)
         if(n):
             n.nodeId = macro['nodeId']
-            if(parent == None):
-                macroArray.append(n)
+            if hasattr(n, 'asynch') and n.asynch: 
+                asyncConditions.append(n)
             else:
-                parent.childMacros.append(n)
-                 
-            if(macro.get('childMacros') is not None and isinstance(macro['childMacros'], list)):
-                parseToMacroArray(macro['childMacros'],macroArray,n)
+                if(parent == None):
+                    macroArray.append(n)
+                else:
+                    parent.childMacros.append(n)
+                    
+                if(macro.get('childMacros') is not None and isinstance(macro['childMacros'], list)):
+                    parseToMacroArray(macro['childMacros'],macroArray,n)
  
-def processMacros(macros:list[Macro]):
+def startAsyncConditions(conds:list[Macro]):
+    for cond in conds:
+        threading.Thread(target=runAsyncCondThread,args=cond).start()
+def runAsyncCondThread(condition:Condition):
+    while(1):
+        toMain('eval','s')
+        if(evalCondition(condition)):
+            processMacros(condition.childMacros,True)
+        time.sleep(globalDelay) 
+        
+def processMacros(macros:list[Macro], asynch = False):
     for macro in macros:
-        # time.sleep(1) 
-        toMain('executing',macro.nodeId)
+        time.sleep(globalDelay) 
+        if not asynch :
+            toMain('executing',macro.nodeId)
+        else:
+            toMain('async',macro.nodeId)
          
         if(macro.classCode ==  Macro.TYPE['COMMAND']): 
             doCommand(macro) 
         if(macro.classCode ==  Macro.TYPE['CONDITION']):     
             if(evalCondition(macro)):
-                processMacros(macro.childMacros)
+                processMacros(macro.childMacros,asynch)
 
 def doCommand(macro:Command): 
     # print('docomand',macro.type,macro.key,Command.TYPE['KEYBOARD_PRESS'],macro.type == Command.TYPE['KEYBOARD_PRESS'])
@@ -100,8 +119,11 @@ def main():
     print('done')
 
 def run(data):
+    asyncConditions = []
     toMain('start',data)
     macros = parseMacros(data)
+    
+    startAsyncConditions(asyncConditions)
     
     while(1):
         processMacros(macros)
@@ -110,10 +132,9 @@ def toMain(path,data):
     print(json.dumps({
         'path': path,
         'data':data
-    }) + '\n') 
+    }) + '\n')      
     sys.stdout.flush()
-     
-sys.stdout.write('im alive') 
+      
 for line in sys.stdin: 
     try:
         obj = json.loads(line)
@@ -122,6 +143,4 @@ for line in sys.stdin:
     except Exception as e:
         toMain('error',e)
         pass
-
-print('st')
-
+ 

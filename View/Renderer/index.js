@@ -67,6 +67,7 @@ const spnCondMsg = document.querySelector('#spnCondMsg')
 
 const dvLoopAtt = document.querySelector('#loopAtt')
 const dvConditionAtt = document.querySelector('#conditionAtt')
+const chkCondAsync = document.querySelector('#chkCondAsync')
 //=============Modal End============
 
 // context menu
@@ -762,6 +763,7 @@ function MacroFromModalForm(){
     }
     if(category == Macro.TYPE.CONDITION){
         let condType = selConditionType.value
+
         if(condType == Condition.TYPE.COLOR_AT_COORD){
             let coord = JSON.parse(inCondTarget.dataset.actual)
             let data = { 
@@ -771,6 +773,7 @@ function MacroFromModalForm(){
             macro = new Condition(condType,parseInt(selCondOperator.value),data)
             console.log('created',macro)
         }
+        macro.async = chkCondAsync.checked
     }
     if(category == Macro.TYPE.LOOP){
         
@@ -810,7 +813,7 @@ function spawnNewMacroDiv(macro,parent = null, padding = 0){
     newDiv.classList.add('macro')
 
     let newP = document.createElement("p"); 
-    newP.innerHTML = macro.label()
+    newP.innerHTML =  macro.label()
     newP.style.paddingLeft = padding + 'px'
     newDiv.appendChild(newP) 
     

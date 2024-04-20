@@ -13,6 +13,7 @@ class MacroController{
             }
             if(i.classCode == Macro.TYPE.CONDITION){
                 n = new Condition(i.type,i.comparison,i.value)
+                n.async = i.async
             }
             if(n){
                 n.nodeId = i.nodeId

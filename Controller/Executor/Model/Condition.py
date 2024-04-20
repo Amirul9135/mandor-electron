@@ -23,6 +23,7 @@ class Condition(Macro):
         self.comparison = comparison
         self.value = value 
         self.childMacros = []
+        self.asynch = False
     
     @staticmethod
     def fromJSON(jobj):
@@ -30,5 +31,7 @@ class Condition(Macro):
             jobj['type'] = int(jobj['type'])  
         if(type(jobj['comparison']) != 'str'):
             jobj['comparison'] = int(jobj['comparison'])  
-        return Condition(jobj['type'],jobj['comparison'],jobj['value']) 
+        cond = Condition(jobj['type'],jobj['comparison'],jobj['value']) 
+        cond.asynch = jobj['async'] 
+        return cond
       
