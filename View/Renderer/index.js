@@ -3,7 +3,7 @@ import {Command} from "../../Model/Command.mjs"
 import {Condition} from "../../Model/Condition.mjs"
 import {Loop} from "../../Model/Loop.mjs"   
 import {MacroController} from "../../Controller/MacroController.js" 
-
+ 
 
 //globals
 const AllMacros = []
@@ -32,6 +32,7 @@ const dvModalMacro = document.querySelector('#modal_macro')
 const modal_macro_title = document.querySelector('#modal_macro_title')
 
 const modalBtnAdd = document.querySelector('#modalBtnAdd')
+const modalBtnSave = document.querySelector('#modalBtnSave')
 const modalBtnCancel = document.querySelector('#modalBtnCancel')
 
 // selects
@@ -69,6 +70,7 @@ const dvConditionAtt = document.querySelector('#conditionAtt')
 //=============Modal End============
 
 // context menu
+const ctBtnEdit = document.querySelector('#ctBtnEdit')
 const ctBtnAfer = document.querySelector('#ctBtnAfer')
 const ctBtnBefore = document.querySelector('#ctBtnBefore')
 const ctBtnInside = document.querySelector('#ctBtnInside')
@@ -83,6 +85,10 @@ window.addEventListener('load',(e)=>{
         keyboard: false
     })
     $(dvModalMacro).on('hidden.bs.modal', function (e) { 
+        //modal close logics 
+        window.api.send('mouse-capture',{
+            path:'stop' 
+        }) 
     });
     Object.keys(Macro.TYPE).forEach(k=>{
         let opt = document.createElement("option");
@@ -225,6 +231,7 @@ selCommandType.addEventListener('change',(e)=>{
 })
 selMacroType.addEventListener('change',(e)=>{
     console.log(e.target.value)
+    console.log('chang')
     dvCommandType.style.display = 'none'
     dvCommandAtt.style.display = 'none'
 
@@ -289,9 +296,10 @@ function condColorPicker(){
 function condSetColorPickerValue(data,capturing = true){
     inCondTarget.value = '(' + data.coord.x + ',' + data.coord.y + ')'
     inCondVal.value = '#' + data.color
+    inCondVal.style.backgroundColor = inCondVal.value
     if(!capturing){
         inCondTarget.dataset.actual = JSON.stringify(data.coord) 
-        inCondVal.dataset.actual = '#' + data.color
+        inCondVal.dataset.actual = '#' + data.color 
     }
 }
 function rmbCondTarget(){
@@ -438,14 +446,14 @@ btnSave.addEventListener('click',async (e)=>{
 })
 
 //=============== Content panel Listeners ================== 
-dvContent.addEventListener('click', (e)=>{
+dvContent.addEventListener('click', async (e)=>{
     if(dvContent.children.length != 0){
         return
     }
     console.log('dv content')
     $(dvModalMacro).modal('show');
     // add first macro sni
-     createNewMAcro().then((n)=>{
+    let n = await createNewMAcro().then((n)=>{
         AllMacros.push(n)
         refreshMacroDisplay()
      })
@@ -486,6 +494,83 @@ document.addEventListener('click',(e)=>{
         console.log('out of context click')
     }
 }) 
+
+ctBtnEdit.addEventListener('click', async (e)=>{ 
+    editMacro()
+}) 
+function editMacro(){
+    let promise =   new Promise((resolve,reject)=>{ 
+        let curr = getSelectedMacro()
+        showMacroModal('Edit',true)
+        reloadMacroVals(curr) 
+
+        modalBtnSave.addEventListener('click',saveMacro) 
+        
+        dvModalMacro.addEventListener('hidden.bs.modal', cancelThis)
+        function cancelThis(){
+            setTimeout(() => {
+                
+                dvModalMacro.removeEventListener('hidden.bs.modal', cancelThis)
+                modalBtnSave.removeEventListener('click',saveMacro)
+                console.log('cancel this')
+                console.log(promise) 
+                return reject('canceled') 
+            }, 100);
+            
+        }
+        function saveMacro(){
+            console.log('saving')
+            try {
+                let macro = MacroFromModalForm()
+                console.log('from Form', macro) 
+                console.log('cur', curr);
+                copyValuesFromTo(macro,curr)
+                $(dvModalMacro).modal('hide'); 
+                currSaved.changes = true
+                modalBtnAdd.removeEventListener('click',saveMacro)
+                refreshMacroDisplay()
+                return resolve(macro)
+            } catch (error) {
+                notify_error('Failed to create macro, check input')
+                console.log(error) 
+                return reject(error)
+            }
+        }
+    }) 
+}
+
+function copyValuesFromTo(from, to){
+    Object.keys(from).forEach(k=>{
+        console.log('copying',k)
+        if(k!='childMacros'){
+            to[k] = from[k]
+        }
+       
+    }) 
+}
+function changeSelectVal(selElem,val){
+    $(selElem).val(val)
+    selElem.dispatchEvent(new Event('change'));
+    console.log('change '+ selElem.id + ' to ' + val)
+
+}
+async function reloadMacroVals(macro){
+    changeSelectVal(selMacroType,macro.classCode) 
+    // await pause(1000)
+    if(macro.classCode == Macro.TYPE.COMMAND){
+        changeSelectVal(selCommandType,macro.type)  
+    }
+    if(macro.classCode == Macro.TYPE.CONDITION){
+        changeSelectVal(selConditionType,macro.type)  
+        if(macro.type == Condition.TYPE.COLOR_AT_COORD){
+            condSetColorPickerValue( {
+                coord:macro.value.coord,
+                color:macro.value.val.substring(1)
+            },false)
+        }
+        changeSelectVal(selCondOperator,macro.comparison)
+    }
+}
 
 ctBtnAfer.addEventListener('click', async (e)=>{
     let curr = getSelectedMacro()
@@ -618,63 +703,80 @@ function clearSelection(){
         e.classList.remove('selected')
     })
 }
+ 
 
-
-function createNewMAcro(){
-    return new Promise((resolve,reject)=>{ 
-        showMacroModal()
-        modalBtnAdd.addEventListener('click',generateMacro)
+function createNewMAcro(){ 
+    let promise =   new Promise((resolve,reject)=>{ 
+        showMacroModal()  
+        modalBtnAdd.addEventListener('click',generateMacro) 
+        
+        dvModalMacro.addEventListener('hidden.bs.modal', cancelThis)
+        function cancelThis(){
+            setTimeout(() => {
+                
+                dvModalMacro.removeEventListener('hidden.bs.modal', cancelThis)
+                modalBtnAdd.removeEventListener('click',generateMacro)
+                console.log('cancel this')
+                console.log(promise) 
+                return reject('canceled') 
+            }, 100);
+            
+        }
         function generateMacro(){
             console.log('generating')
             try {
-                let macro = null
-                let category = selMacroType.value
-                if(category == Macro.TYPE.COMMAND){
-                    let cmdType = selCommandType.value
-                    if(selCommandType.value == Command.TYPE.MOUSE_CLICK){
-                        let rad =  $('input[name="radMouseClick"]:checked').val(); 
-                        macro = new Command(rad,cmdType,inCommandDura.value,JSON.parse( inCoord.dataset.actual))
-                    }else{
-                        //keyboards
-                        if(selCommandType.value != Command.TYPE.DELAY && !inCmdKey.value){
-                            throw new Error('invalid')
-                        }
-                        if(selCommandType.value == Command.TYPE.DELAY && !(parseInt(inCommandDura.value))){
-                            throw new Error('invalid')
-
-                        }
-                        macro = new Command(inCmdKey.value,cmdType,inCommandDura.value)
-                    }
-                }
-                if(category == Macro.TYPE.CONDITION){
-                    let condType = selConditionType.value
-                    if(condType == Condition.TYPE.COLOR_AT_COORD){
-                        let coord = JSON.parse(inCondTarget.dataset.actual)
-                        let data = { 
-                            coord: coord,
-                            val: inCondVal.value
-                        }   
-                        macro = new Condition(condType,parseInt(selCondOperator.value),data)
-                        console.log('created',macro)
-                    }
-                }
-                if(category == Macro.TYPE.LOOP){
-                    
-                }
+                let macro = MacroFromModalForm()
                 $(dvModalMacro).modal('hide'); 
-                modalBtnAdd.removeEventListener('click',generateMacro)
-                let test = macro.label()// failing case yg blom create proper object
                 currSaved.changes = true
-                resolve(macro)
+                modalBtnAdd.removeEventListener('click',generateMacro)
+                return resolve(macro)
             } catch (error) {
                 notify_error('Failed to create macro, check input')
-                console.log(error)
-                // modalBtnAdd.removeEventListener('click',generateMacro)
-                // $(dvModalMacro).modal('hide'); 
-                // reject()
+                console.log(error) 
+                return reject(error)
             }
         }
-    })
+    }) 
+     return promise
+} 
+function MacroFromModalForm(){
+
+    let macro = null
+    let category = selMacroType.value
+    if(category == Macro.TYPE.COMMAND){
+        let cmdType = selCommandType.value
+        if(selCommandType.value == Command.TYPE.MOUSE_CLICK){
+            let rad =  $('input[name="radMouseClick"]:checked').val(); 
+            macro = new Command(rad,cmdType,inCommandDura.value,JSON.parse( inCoord.dataset.actual))
+        }else{
+            //keyboards
+            if(selCommandType.value != Command.TYPE.DELAY && !inCmdKey.value){
+                throw new Error('invalid')
+            }
+            if(selCommandType.value == Command.TYPE.DELAY && !(parseInt(inCommandDura.value))){
+                throw new Error('invalid')
+
+            }
+            macro = new Command(inCmdKey.value,cmdType,inCommandDura.value)
+        }
+    }
+    if(category == Macro.TYPE.CONDITION){
+        let condType = selConditionType.value
+        if(condType == Condition.TYPE.COLOR_AT_COORD){
+            let coord = JSON.parse(inCondTarget.dataset.actual)
+            let data = { 
+                coord: coord,
+                val: inCondVal.value
+            }   
+            macro = new Condition(condType,parseInt(selCondOperator.value),data)
+            console.log('created',macro)
+        }
+    }
+    if(category == Macro.TYPE.LOOP){
+        
+    }
+    let test = macro.label()// failing case yg blom create proper object
+    return macro
 }
 function dummy(e){ 
     let cd = new Condition(Condition.TYPE.COLOR_AT_COORD,Condition.COMPARE.IS_NOT_VALUE,{val:100,coord:{x:1,y:1}})
@@ -713,12 +815,11 @@ function spawnNewMacroDiv(macro,parent = null, padding = 0){
     newDiv.appendChild(newP) 
     
     newDiv.dataset.model = macro.constructor.name
-    macro.parent = parent
-    console.log('mid create',macro)
+    macro.parent = parent 
     if(!macro.nodeId){
         let nid = "MC_"+ spawnCount 
         macro.node = newDiv
-        newDiv.id= nid
+        newDiv.id= nid 
         macro.nodeId = nid 
         spawnCount++
     }
@@ -828,14 +929,34 @@ function findMacro(macros,nodeId){
         }
     } 
     return null
-} 
-function showMacroModal(additionalTitle = ''){
+}  
+function showMacroModal(additionalTitle = '',edit = false){
     $(dvModalMacro).modal('show')
     enableAllOperator()
-    modal_macro_title.innerHTML = additionalTitle
-    $('#' + dvModalMacro.id + ' input:not(:radio)').each(function() {
+    modal_macro_title.innerHTML = additionalTitle  
+    // triggerEvent(selMacroType, 'change');
+    // $(selMacroType).trigger('change') 
+    if(edit){
+        $(modalBtnAdd).hide()
+        $(modalBtnSave).show()
+    }
+    else{
+        $(modalBtnAdd).show()
+        $(modalBtnSave).hide()
+    }
+    dvCommandType.style.display = 'none'
+    dvCommandAtt.style.display = 'none'
+
+    dvConditionType.style.display = 'none'
+    dvConditionAtt.style.display = 'none'
+
+    dvLoopType.style.display = 'none'
+    dvLoopAtt.style.display = 'none'
+
+    $('#' + dvModalMacro.id + ' input:not(:radio), #' + dvModalMacro.id + ' select').each(function() {
         // Set value to empty string
         $(this).val('');
+        $(this).css('background-color', 'inherit') 
         // Clear dataset
         var dataset = $(this)[0].dataset;
         Object.keys(dataset).forEach(function(key) {

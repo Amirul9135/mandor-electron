@@ -18,7 +18,7 @@
             <div style="display: inline-block;max-height:10vh">
                 <button id="btnStart" type="button" class="btn btn-outline-success controlBtn"><i class="fa fa-play"
                         aria-hidden="true"></i></button>
-                <button id="btnPause" type="button" class="btn btn-outline-warning controlBtn"><i class="fa fa-pause"
+                <button disabled id="btnPause" type="button" class="btn btn-outline-warning controlBtn"><i class="fa fa-pause"
                         aria-hidden="true"></i></button>
                 <button id="btnStop" type="button" class="btn btn-outline-danger controlBtn"><i class="fa fa-stop"
                         aria-hidden="true"></i></button>
@@ -38,6 +38,7 @@
 
     <div id="dvContextMenu" class="context-menu">
         <ul>
+            <li id="ctBtnEdit" title="Add new macro after selected">Edit</li>
             <li id="ctBtnAfer" title="Add new macro after selected">Add After</li>
             <li id="ctBtnBefore" title="Add new macro before selected">Add Before</li>
             <li id="ctBtnInside" title="Append new macro as list child of selected">Add Inside</li>
@@ -49,7 +50,7 @@
         <div class="modal-dialog modal-lg" style="margin-right: 1vw;" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Macro&nbsp;<span id="modal_macro_title"></span></h5>
+                    <h5 class="modal-title">Macro&nbsp;<span id="modal_macro_title"></span></h5>
                 </div>
                 <div class="modal-body">
                     <div class="row">
@@ -166,6 +167,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button id="modalBtnSave" type="button" class="btn btn-primary">Save</button>
                     <button id="modalBtnAdd" type="button" class="btn btn-primary">Add</button>
                     <button id="modalBtnCancel"  type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </div>

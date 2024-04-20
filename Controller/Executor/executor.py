@@ -35,7 +35,7 @@ def parseToMacroArray(arr,macroArray:list,parent:Macro=None):
  
 def processMacros(macros:list[Macro]):
     for macro in macros:
-        time.sleep(1) 
+        # time.sleep(1) 
         toMain('executing',macro.nodeId)
          
         if(macro.classCode ==  Macro.TYPE['COMMAND']): 

@@ -3,7 +3,7 @@ import {Macro} from "./Macro.mjs"
 class Condition extends Macro{
     static TYPE = { //value format
         COLOR_AT_COORD: 0, // {val:colorhex,coord:{x,y},tolerance:10}
-        NUMBER: 1 // {val:fixedToCompare,counter:object.count()} object yg expose counter via function int/float whatever
+        // NUMBER: 1 // {val:fixedToCompare,counter:object.count()} object yg expose counter via function int/float whatever
     }
 
 
