@@ -1,5 +1,5 @@
 const { spawn } = require('child_process'); 
-
+const pythonPath = 'C:\\Users\\nitor\\AppData\\Local\\Programs\\Python\\Python312\\python.exe'
 class MacroExecutor{
     static STATE = {
         STOP: 0,
@@ -33,7 +33,7 @@ class MacroExecutor{
     }
     run(){  
         console.log('try run') 
-        this.executor = spawn('C:\\Users\\nitor\\AppData\\Local\\Programs\\Python\\Python312\\python.exe', ['./Controller/Executor/executor.py']);
+        this.executor = spawn(pythonPath, ['./Controller/Executor/executor.py']);
         console.log('run') 
         // Listen for data from the Python process
         this.executor.stdout.on('data', (data) => {

@@ -32,6 +32,7 @@ class Condition(Macro):
         if(type(jobj['comparison']) != 'str'):
             jobj['comparison'] = int(jobj['comparison'])  
         cond = Condition(jobj['type'],jobj['comparison'],jobj['value']) 
-        cond.asynch = jobj['async'] 
+        if hasattr(jobj, 'async'): 
+            cond.asynch = jobj['async'] 
         return cond
       

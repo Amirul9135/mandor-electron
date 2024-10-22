@@ -8,7 +8,7 @@ from Model.Command import Command
 from Model.Condition import Condition
 
 asyncConditions:list[Macro] = []
-globalDelay = 1
+globalDelay = 0.1
 
 def parseMacros(jsonObj):
     
@@ -79,7 +79,14 @@ def doCommand(macro:Command):
             
     if(macro.type == Command.TYPE['KEYBOARD_PRESS']):
         # print('pressing',macro.key)
-        pyautogui.press(macro.key) 
+        # pyautogui.press(macro.key) 
+        pyautogui.keyDown(macro.key)
+        wait = 0.1
+        if hasattr(macro, 'duration') and macro.duration:
+            wait = int( macro.duration)
+        time.sleep(wait / 1000)
+        pyautogui.keyUp(macro.key)
+            
     
     
     pass
